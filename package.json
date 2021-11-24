@@ -1,14 +1,16 @@
 {
   "name": "Dota2BotLobby",
-  "version": "0.1",
-  "repository" : {     
-    "type" : "git",
-     "url" : "git://github.com/Rodion15/Dota2BotLobby.git" 
-  },
+  "version": "0.0.1",
+  "description": "Dota2 Bot Lobby",
   "scripts": {
     "bot": "node bot.js",
     "test": "node test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rodion15/Dota2BotLobby.git"
+  },
+  "license": "MIT",
   "devDependencies": {
     "@rodrigogs/mysql-events": "^0.6.0",
     "dota2": "^6.2.0",
@@ -17,5 +19,9 @@
     "mysql-events": "0.0.11",
     "protobufjs": "5.0.1",
     "steam": "^1.4.1"
-  }
+  },
+  "engines": {
+    "node": "7.9.0"
+  },
+  "cache": []
 }
