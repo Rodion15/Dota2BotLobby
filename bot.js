@@ -1,22 +1,16 @@
 var steam = require("steam"),
-    util = require("util"),
     fs = require("fs"),
     crypto = require("crypto"),
     dota2 = require("dota2"),
-    //MySQLEvents = require('@rodrigogs/mysql-events'),
-	MySQLEvents = require('mysql-events'),
+    MySQLEvents = require('mysql-events'),
     MySQL = require('mysql'),
     bots = [];
 
 // Load config
 global.config = (fs.existsSync("./local.config.js")) ? require("./local.config") : require("./config");
 
-
-
 var mysql = MySQL.createConnection(global.config.mysql),
-	mysqlEventWatcher = MySQLEvents(global.config.mysql1);
-	
-	
+    mysqlEventWatcher = MySQLEvents(global.config.mysql);
 
 // Select free bot from bot array
 var selectFreeBot = function(cb){
@@ -27,12 +21,12 @@ var selectFreeBot = function(cb){
                 return true;
             }
         }
-        util.log('All bots busy. Waiting for free bot..');
+        console.log('All bots busy. Waiting for free bot..');
         setTimeout(function(){
             selectFreeBot(cb);
         }, 10000);
     } else {
-        util.log('List of bots empty');
+        console.log('List of bots empty');
         return false;
     }
 };
@@ -74,51 +68,47 @@ var initBot = function(cfg){
         if (sentry.length)
             logOnDetails.sha_sentryfile = sentry;
     } catch (beef) {
-        util.log('[Bot #' + bot.id + '] ' + "Cannae load the sentry. " + beef);
+        console.log('[Bot #' + bot.id + '] ' + "Cannae load the sentry. " + beef);
     }
 
     // Steam client handlers
     bot.steamClient.on('connected', function() {
-        util.log('[Bot #' + bot.id + '] ' + 'Steam connected');
+        console.log('[Bot #' + bot.id + '] ' + 'Steam connected');
         bot.steamUser.logOn(logOnDetails);
     });
 
-    bot.steamClient.on('logOnResponse', function (logonResp)
-	{
-        if (logonResp.eresult == steam.EResult.OK) 
-		{
-            util.log('[Bot #' + bot.id + '] ' + "Logged on");
+    bot.steamClient.on('logOnResponse', function (logonResp){
+        if (logonResp.eresult == steam.EResult.OK) {
+            console.log('[Bot #' + bot.id + '] ' + "Logged on");
             bot.Dota2.launch();
-            bot.Dota2.on("ready", function() 
-			{
+            bot.Dota2.on("ready", function() {
                 console.log('[Bot #' + bot.id + '] ' + "Node-dota2 ready");
                 var enoughPeople = false,
                     starting = false;
-                var start = function () 
-				{
+                var start = function () {
                     starting = true;
                     var remainingSeconds = global.config.remaining_before_match;
                     (function tick() {
                         if (enoughPeople) {
                             if (remainingSeconds > 0) {
-                                util.log('[Bot #' + bot.id + '] ' + "Starting in " + remainingSeconds + " seconds");
+                                console.log('[Bot #' + bot.id + '] ' + "Starting in " + remainingSeconds + " seconds");
                                 setTimeout(tick, 1000);
                                 remainingSeconds--;
                             } else {
                                 // Launch lobby match
                                 bot.Dota2.launchPracticeLobby(function (err, data) {
-                                    util.log('[Bot #' + bot.id + '] ' + 'Game started');
+                                    console.log('[Bot #' + bot.id + '] ' + 'Game started');
 
                                     // Save status 'game started' to database
                                     mysql.query('update lobby set status = 1 ' +
                                                 'where id = ' + bot.currentLobby.id, function(err, res){
-                                        //if(err) throw err;
+                                        if(err) throw err;
 
                                         // Leave lobby when match started
                                         bot.Dota2.leavePracticeLobby(function (err, body) {
                                             bot.free = true;
                                             bot.currentLobby.id = null;
-                                            util.log('[Bot #' + bot.id + '] ' + 'Bot leaved');
+                                            console.log('[Bot #' + bot.id + '] ' + 'Bot leaved');
                                             //bot.Dota2.abandonCurrentGame();
                                         });
                                     });
@@ -126,45 +116,43 @@ var initBot = function(cfg){
                             }
                         } else {
                             starting = false;
-                            util.log('[Bot #' + bot.id + '] ' + "Aborting start: someone left");
+                            console.log('[Bot #' + bot.id + '] ' + "Aborting start: someone left");
                         }
                     })();
                 };
 
                 // Update lobby event handler
-                bot.Dota2.on("practiceLobbyUpdate", function(lobby) 
-				{
+                bot.Dota2.on("practiceLobbyUpdate", function(lobby) {
                     enoughPeople = (lobby.members.filter(function(e){return e.team === 0 || e.team === 1}).length >= global.config.match_users);
                     if(enoughPeople && !starting) {
                         start();
                     }
                 });
             });
-            bot.Dota2.on("unready", function () 
-			{
+            bot.Dota2.on("unready", function () {
                 console.log('[Bot #' + bot.id + '] ' + "Node-dota2 unready.");
             });
         }
     });
 
     bot.steamClient.on('loggedOff', function (eresult){
-        util.log('[Bot #' + bot.id + '] ' + "Logged off from Steam");
+        console.log('[Bot #' + bot.id + '] ' + "Logged off from Steam");
     });
 
     bot.steamClient.on('error', function (error){
-        util.log('[Bot #' + bot.id + '] ' + "Connection closed by server: " + error);
+        console.log('[Bot #' + bot.id + '] ' + "Connection closed by server: " + error);
         //bot.steamClient.connect();
     });
 
     bot.steamClient.on('servers', function (servers){
-        util.log('[Bot #' + bot.id + '] ' + "Received servers");
+        console.log('[Bot #' + bot.id + '] ' + "Received servers");
         fs.writeFile('servers', JSON.stringify(servers), function(err){
             if (err){
                 if (this.debug)
-                    util.log('[Bot #' + bot.id + '] ' + "Error writing ");
+                    console.log('[Bot #' + bot.id + '] ' + "Error writing ");
             } else {
                 if (this.debug)
-                    util.log("");
+                    console.log("");
             }
         });
     });
@@ -172,7 +160,7 @@ var initBot = function(cfg){
     bot.steamUser.on('updateMachineAuth', function(sentry, callback) {
         var hashedSentry = crypto.createHash('sha1').update(sentry.bytes).digest();
         fs.writeFileSync('sentry', hashedSentry);
-        util.log('[Bot #' + bot.id + '] ' + "sentryfile saved");
+        console.log('[Bot #' + bot.id + '] ' + "sentryfile saved");
         callback({
             sha_file: hashedSentry
         });
@@ -187,33 +175,32 @@ var initBot = function(cfg){
 
 // Start database watcher
 var startDBWatcher = function(){
-    util.log('Init database watcher');
+    console.log('Init database watcher');
 
-
-	mysqlEventWatcher.add(global.config.mysql.database + '.lobby', function (oldRow, newRow, event) 
-	{
-        util.log("Init watcher on table `lobby`");
+    // Create database watcher for table 'lobby'
+    mysqlEventWatcher.add(global.config.mysql.database + '.lobby', function (oldRow, newRow, event) {
+        console.log("Init watcher on table `lobby`");
 
         // Row inserted
-        if (oldRow === null) 
-		{
+        if (oldRow === null) {
 
             // Select bot
             selectFreeBot(function (bot) {
                 bot.free = false; // set bot as busy
-                util.log('[Bot #' + bot.id + '] ' + 'Started');
+                console.log('[Bot #' + bot.id + '] ' + 'Started');
                 var lobbyId = newRow.fields.id,
                     lobbyName = 'Lobby_' + lobbyId,
                     lobbyPassword = generatePassword();
                 bot.currentLobby.id = lobbyId;
                 // Save lobby name and password to database, and status 'in process'
-                mysql.query('update `lobby` set `name` = "' + lobbyName + '", ' + '`password` = "' + lobbyPassword + '", ' + 'status = 2 ' + 'where `id` = ' + lobbyId, function (error, results, fields) 
-				{
-                    //if (error) throw error;
+                mysql.query('update `lobby` set `name` = "' + lobbyName + '", ' +
+                            '`password` = "' + lobbyPassword + '", ' +
+                            'status = 2 ' +
+                            'where `id` = ' + lobbyId, function (error, results, fields) {
+                    if (error) throw error;
 
                     // Leave previous lobby for this bot and start new
-                    bot.Dota2.leavePracticeLobby(function(err, data)
-					{
+                    bot.Dota2.leavePracticeLobby(function(err, data){
                         if(!err) {
                             //bot.Dota2.abandonCurrentGame(function(err, body){});
 
@@ -223,9 +210,9 @@ var startDBWatcher = function(){
                                     if (err) {
                                         bot.free = true;
                                         bot.currentLobby.id = null;
-                                        util.log('[Bot #' + bot.id + '] ' + err + ' - ' + JSON.stringify(data));
+                                        console.log('[Bot #' + bot.id + '] ' + err + ' - ' + JSON.stringify(data));
                                     } else {
-                                        util.log('[Bot #' + bot.id + '] ' + 'Lobby created');
+                                        console.log('[Bot #' + bot.id + '] ' + 'Lobby created');
 
                                         // For some reason the bot automatically joins the first slot. Kick him.
                                         bot.Dota2.practiceLobbyKickFromTeam(bot.Dota2.AccountID);
@@ -235,11 +222,11 @@ var startDBWatcher = function(){
                                             'from `lobby_user` lu ' +
                                             'join `user` u on u.`id` = lu.`user_id` ' +
                                             'where lu.`lobby_id` = ' + lobbyId, function (error, results, fields){
-                                            //if (error)
-                                                //throw error;
+                                            if (error)
+                                                throw error;
 
                                             // Send invites
-                                            util.log('[Bot #' + bot.id + '] ' + 'Inviting users..');
+                                            console.log('[Bot #' + bot.id + '] ' + 'Inviting users..');
                                             for(var i = 0; i < results.length; i++){
                                                 bot.Dota2.inviteToLobby(results[i].stid);
                                             }
@@ -252,13 +239,13 @@ var startDBWatcher = function(){
                                                 // Save lobby status 'timeout lobby'
                                                 mysql.query('update lobby set status = 3 ' +
                                                             'where id = ' + lobbyId, function(err, res){
-                                                    //if(err) throw err;
+                                                    if(err) throw err;
 
                                                     // Leave lobby
                                                     bot.Dota2.leavePracticeLobby(function (err, body) {
                                                         bot.free = true;
                                                         bot.currentLobby.id = null;
-                                                        util.log('[Bot #' + bot.id + '] ' + 'Bot leave lobby by timeout');
+                                                        console.log('[Bot #' + bot.id + '] ' + 'Bot leave lobby by timeout');
                                                         bot.Dota2.abandonCurrentGame(function (err, body) {
                                                         });
                                                     });
@@ -274,7 +261,7 @@ var startDBWatcher = function(){
                                 // Select lobby settings from database (leagueid)
                                 mysql.query('select * from settings ' +
                                             'where id = ' + newRow.fields.settings_id, function (error, results, fields) {
-                                    //if (error) throw error;
+                                    if (error) throw error;
                                     var properties = {
                                         leagueid: results.fields.leagueid
                                     };
@@ -302,8 +289,7 @@ var startDBWatcher = function(){
 
     // Create database watcher for table 'bot'
     mysqlEventWatcher.add(global.config.mysql.database + '.bot', function (oldRow, newRow, event){
-
-        util.log("Init watcher on table `bot`");
+        console.log("Init watcher on table `bot`");
 
         // Row inserted
         if (oldRow === null) {
@@ -319,13 +305,13 @@ var stopDBWatcher = function () {
 
 // Start app
 (function init(){
-    util.log("START");
+    console.log("START");
     mysql.connect();
 
     // Init bots
     mysql.query('select * from bot', function (error, results, fields){
-        //if (error) throw error;
-        util.log('Found ' + results.length + ' bots accounts');
+        if (error) throw error;
+        console.log('Found ' + results.length + ' bots accounts');
         for(var i = 0; i < results.length; i++){
             initBot(results[i]);
         }
@@ -354,7 +340,7 @@ process.on('SIGINT', function() {
         mysql.end();
     }, 4000);
     setTimeout(function(){
-        util.log("STOP");
+        console.log("STOP");
         process.exit();
     }, 5000);
 });
