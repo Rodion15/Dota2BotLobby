@@ -3,19 +3,13 @@ var config = {};
 var dota2 = require("dota2");
 
 // Database settings
-config.mysql1 = {
-    host:     '127.0.0.1',
-    user:     'root',
-    password: '',
-    database: 'bot'
-};
 
 config.mysql = {
-    host:     '46.173.221.33',
-	port:     '3317',
-    user:     'bot',
-    password: 'U3s2P1c6',
-    database: 'user1002298_bot'
+    host:     '',
+	port:     '',
+    user:     '',
+    password: '',
+    database: ''
 };
 
 
