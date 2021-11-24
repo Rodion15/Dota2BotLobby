@@ -9,7 +9,7 @@
     "bot": "node bot.js",
     "test": "node test.js"
   },
-  "dependencies": {
+  "devDependencies": {
     "@rodrigogs/mysql-events": "^0.6.0",
     "dota2": "^6.2.0",
     "express": "^4.17.1",
