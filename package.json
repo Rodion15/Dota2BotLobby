@@ -1,6 +1,10 @@
 {
   "name": "Dota2BotLobby",
   "version": "0.1",
+  "repository" : {     
+    "type" : "git",
+     "url" : "git://github.com/Rodion15/Dota2BotLobby.git" 
+  },
   "scripts": {
     "bot": "node bot.js",
     "test": "node test.js"
