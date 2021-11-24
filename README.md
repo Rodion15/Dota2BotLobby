@@ -5,4 +5,6 @@
 ```bash
   $ npm install
   $ npm run bot
+
+  test
 ```
